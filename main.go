@@ -1,88 +1,122 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
-	"time"
+	"strconv"
+
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var client *mongo.Client
-
-type Person struct{
-	user_id string `jason:"user_id,omitempty"bson:"user_id,omitempty"`
-	login string `jason:"login,omitempty"bson:"login,omitempty"`
-	password string `jason:"password,omitempty"bson:"password,omitempty"`
-	name string `jason:"name,omitempty"bson:"name,omitempty"`
-	company_id    int     `jason:"company_id,omitempty"bson:"company_id,omitempty"`
-	company_name  string   `jason:"company_name,omitempty"bson:"company_name,omitempty"`
-	credit_cards string `jason:"credit_cards,omitempty"bson:"credit_cards,omitempty"`
+// Order struct (Model)
+type Order struct {
+	ID              string    `json:"ID"`
+	createTime      string    `json:"createTime"`
+	orderName       string    `json:"orderName"`
+	orderitemID     int       `json:"orderitemID"`
+	pricePerUnit    float32   `json:"pricePerUnit"`
+	orderQuantity   int       `json:"orderQuantity"`
+	deliverQuantity int       `json:"deliverQuantity"`
+	product         string    `json:"product"`
+	Customer        *Customer `json:"customer"`
 }
 
-func CreatePersonEndpoint(response http.ResponseWriter, request *http.Request) {
-	response.Header().Set("content-type", "application/json")
-	var person Person
-	_ = json.NewDecoder(request.Body).Decode(&person)
-	collection := client.Database("test").Collection("people")
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	result, _ := collection.InsertOne(ctx, person)
-	json.NewEncoder(response).Encode(result)
+// Customer struct
+type Customer struct {
+	userID      string `json:"userID"`
+	login       string `json:"login"`
+	password    string `json:"password"`
+	name        string `json:"name"`
+	companyID   int    `json:"companyID"`
+	companyName string `json:"companyName"`
+	creditCards string `json:"creditCards"`
 }
 
-func GetPeopleEndpoint(response http.ResponseWriter, request *http.Request) { 
-	response.Header().Set("content-type", "application/json")
-	var people []Person
-	collection := client.Database("test").Collection("people")
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
-		return
-	}
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		var person Person
-		cursor.Decode(&person)
-		people = append(people, person)
-	}
-	if err := cursor.Err(); err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
-		return
-	}
-	json.NewEncoder(response).Encode(people)
+// Init orders var as a slice Order struct
+var orders []Order
+
+// Get all orders
+func getOrders(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(orders)
 }
 
+// Get single order by orderID
+func getOrder(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r) // Gets params
+	// Loop through orders and find one with the id from the params
+	for _, item := range orders {
+		if item.ID == params["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(&Order{})
+}
+
+// Add new order
+func createOrder(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var order Order
+	_ = json.NewDecoder(r.Body).Decode(&order)
+	order.ID = strconv.Itoa(rand.Intn(100000000)) // Mock ID - not safe
+	orders = append(orders, order)
+	json.NewEncoder(w).Encode(order)
+}
+
+// Update order
+func updateOrder(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for index, item := range orders {
+		if item.ID == params["id"] {
+			orders = append(orders[:index], orders[index+1:]...)
+			var order Order
+			_ = json.NewDecoder(r.Body).Decode(&order)
+			order.ID = params["id"]
+			orders = append(orders, order)
+			json.NewEncoder(w).Encode(order)
+			return
+		}
+	}
+}
+
+// Delete order
+func deleteOrder(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for index, item := range orders {
+		if item.ID == params["id"] {
+			orders = append(orders[:index], orders[index+1:]...)
+			break
+		}
+	}
+	json.NewEncoder(w).Encode(orders)
+}
+
+// Main function
 func main() {
-	// Set client options
-clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
-// Connect to MongoDB
-client, err := mongo.Connect(context.TODO(), clientOptions)
-if err != nil {
-    log.Fatal(err)
-}
-// Check the connection
-err = client.Ping(context.TODO(), nil)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println("Connected to MongoDB!")
-collection := client.Database("test").Collection("people")
-ivan:=Person{"ivan","ivan","12345","Ivan Ivanovich",1,"Roga & Kopyta","*****-1234,*****-5678"}
-insertResult, err := collection.InsertOne(context.TODO(), )
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Inserted a single document: ", insertResult.InsertedID)
-	router := mux.NewRouter()
-	router.HandleFunc("/person", CreatePersonEndpoint).Methods("POST")
-	router.HandleFunc("/people", GetPeopleEndpoint).Methods("GET")
-	http.ListenAndServe(":8000", router)
+	fmt.Println("Connected to MongoDB!")
+	fmt.Println("Listen to localhost:8000!")
+	// Init router
+	r := mux.NewRouter()
+
+	// Hardcoded data - @todo: add database
+	orders = append(orders, Order{ID: "1", createTime: "2006-01-02T15:04:05-0700", orderName: "PO #001-I", orderitemID: 1, pricePerUnit: 1.3454, orderQuantity: 10, deliverQuantity: 5, product: "Corrugated Box", Customer: &Customer{userID: "ivan", login: "ivan", password: "12345", name: "Ivan Ivanovich", companyID: 1, companyName: "Roga & Kopyta", creditCards: "[*****-1234 *****-5678]"}})
+	orders = append(orders, Order{ID: "2", createTime: "2006-01-02T15:04:05-0700", orderName: "PO #001-I", orderitemID: 1, pricePerUnit: 1.3454, orderQuantity: 10, deliverQuantity: 5, product: "Corrugated Box", Customer: &Customer{userID: "ivan", login: "ivan", password: "12345", name: "Ivan Ivanovich", companyID: 1, companyName: "Roga & Kopyta", creditCards: "[*****-1234 *****-5678]"}})
+
+	// Route handles & endpoints
+	r.HandleFunc("/orders", getOrders).Methods("GET")
+	r.HandleFunc("/orders/{id}", getOrder).Methods("GET")
+	r.HandleFunc("/orders", createOrder).Methods("POST")
+	r.HandleFunc("/orders/{id}", updateOrder).Methods("PUT")
+	r.HandleFunc("/orders/{id}", deleteOrder).Methods("DELETE")
+
+	// Start server
+	log.Fatal(http.ListenAndServe(":8000", r))
+
 }
