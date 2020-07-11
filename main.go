@@ -20,10 +20,9 @@ type Order struct {
 	OrderID         string    `json:"order_id"`
 	OrderName       string    `json:"order_name"`
 	CreateTime      time.Time `json:"create_time"`
-	PricePerUnit    float64   `json:"price_per_unit"`
-	OrderQuantity   int64     `json:"order_quantity"`
-	DeliverQuantity float64   `json:"deliver_quantity"`
 	Product         string    `json:"product"`
+	DeliveredAmount float64   `json:"delivered_amount"`
+	TotalAmount     float64   `json:"total_amount"`
 	Customer        *Customer `json:"customer"`
 }
 
@@ -80,6 +79,7 @@ func updateOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	json.NewEncoder(w).Encode(orders)
 }
 
 // Delete order
@@ -109,17 +109,16 @@ func main() {
 			log.Fatal(error)
 		}
 		t, _ := time.Parse(time.RFC3339, record[1])
-		p, _ := strconv.ParseFloat(record[4], 64)
-		oq, _ := strconv.ParseInt(record[5], 10, 64)
-		dq, _ := strconv.ParseFloat(record[6], 64)
+		da, _ := strconv.ParseFloat(record[15], 64)
+		ta, _ := strconv.ParseFloat(record[16], 64)
+
 		orders = append(orders, Order{
 			OrderID:         record[0],
 			OrderName:       record[2],
 			CreateTime:      t,
-			PricePerUnit:    p,
-			OrderQuantity:   oq,
-			DeliverQuantity: dq,
 			Product:         record[7],
+			DeliveredAmount: da,
+			TotalAmount:     ta,
 			Customer: &Customer{
 				Name:        record[11],
 				CompanyName: record[13],
