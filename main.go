@@ -1,38 +1,36 @@
 package main
 
 import (
+	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
-	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
 
 // Order struct (Model)
 type Order struct {
-	ID              string    `json:"ID"`
-	createTime      string    `json:"createTime"`
-	orderName       string    `json:"orderName"`
-	orderitemID     int       `json:"orderitemID"`
-	pricePerUnit    float32   `json:"pricePerUnit"`
-	orderQuantity   int       `json:"orderQuantity"`
-	deliverQuantity int       `json:"deliverQuantity"`
-	product         string    `json:"product"`
+	OrderID         string    `json:"order_id"`
+	OrderName       string    `json:"order_name"`
+	CreateTime      time.Time `json:"create_time"`
+	PricePerUnit    float64   `json:"price_per_unit"`
+	OrderQuantity   int64     `json:"order_quantity"`
+	DeliverQuantity float64   `json:"deliver_quantity"`
+	Product         string    `json:"product"`
 	Customer        *Customer `json:"customer"`
 }
 
 // Customer struct
 type Customer struct {
-	userID      string `json:"userID"`
-	login       string `json:"login"`
-	password    string `json:"password"`
-	name        string `json:"name"`
-	companyID   int    `json:"companyID"`
-	companyName string `json:"companyName"`
-	creditCards string `json:"creditCards"`
+	Name        string `json:"customer_name"`
+	CompanyName string `json:"company_name"`
 }
 
 // Init orders var as a slice Order struct
@@ -50,7 +48,7 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r) // Gets params
 	// Loop through orders and find one with the id from the params
 	for _, item := range orders {
-		if item.ID == params["id"] {
+		if item.OrderID == params["id"] {
 			json.NewEncoder(w).Encode(item)
 			return
 		}
@@ -63,7 +61,6 @@ func createOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var order Order
 	_ = json.NewDecoder(r.Body).Decode(&order)
-	order.ID = strconv.Itoa(rand.Intn(100000000)) // Mock ID - not safe
 	orders = append(orders, order)
 	json.NewEncoder(w).Encode(order)
 }
@@ -73,11 +70,11 @@ func updateOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	for index, item := range orders {
-		if item.ID == params["id"] {
+		if item.OrderID == params["id"] {
 			orders = append(orders[:index], orders[index+1:]...)
 			var order Order
 			_ = json.NewDecoder(r.Body).Decode(&order)
-			order.ID = params["id"]
+			order.OrderID = params["id"]
 			orders = append(orders, order)
 			json.NewEncoder(w).Encode(order)
 			return
@@ -90,7 +87,7 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	for index, item := range orders {
-		if item.ID == params["id"] {
+		if item.OrderID == params["id"] {
 			orders = append(orders[:index], orders[index+1:]...)
 			break
 		}
@@ -100,15 +97,40 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 
 // Main function
 func main() {
-	fmt.Println("Connected to MongoDB!")
+
+	// @todo: add database
+	csvFile, _ := os.Open("test_data.csv")
+	reader := csv.NewReader(bufio.NewReader(csvFile))
+	for {
+		record, error := reader.Read()
+		if error == io.EOF {
+			break
+		} else if error != nil {
+			log.Fatal(error)
+		}
+		t, _ := time.Parse(time.RFC3339, record[1])
+		p, _ := strconv.ParseFloat(record[4], 64)
+		oq, _ := strconv.ParseInt(record[5], 10, 64)
+		dq, _ := strconv.ParseFloat(record[6], 64)
+		orders = append(orders, Order{
+			OrderID:         record[0],
+			OrderName:       record[2],
+			CreateTime:      t,
+			PricePerUnit:    p,
+			OrderQuantity:   oq,
+			DeliverQuantity: dq,
+			Product:         record[7],
+			Customer: &Customer{
+				Name:        record[11],
+				CompanyName: record[13],
+			},
+		})
+	}
+	orderJSON, _ := json.Marshal(orders)
+	fmt.Println(string(orderJSON))
 	fmt.Println("Listen to localhost:8000!")
 	// Init router
 	r := mux.NewRouter()
-
-	// Hardcoded data - @todo: add database
-	orders = append(orders, Order{ID: "1", createTime: "2006-01-02T15:04:05-0700", orderName: "PO #001-I", orderitemID: 1, pricePerUnit: 1.3454, orderQuantity: 10, deliverQuantity: 5, product: "Corrugated Box", Customer: &Customer{userID: "ivan", login: "ivan", password: "12345", name: "Ivan Ivanovich", companyID: 1, companyName: "Roga & Kopyta", creditCards: "[*****-1234 *****-5678]"}})
-	orders = append(orders, Order{ID: "2", createTime: "2006-01-02T15:04:05-0700", orderName: "PO #001-I", orderitemID: 1, pricePerUnit: 1.3454, orderQuantity: 10, deliverQuantity: 5, product: "Corrugated Box", Customer: &Customer{userID: "ivan", login: "ivan", password: "12345", name: "Ivan Ivanovich", companyID: 1, companyName: "Roga & Kopyta", creditCards: "[*****-1234 *****-5678]"}})
-
 	// Route handles & endpoints
 	r.HandleFunc("/orders", getOrders).Methods("GET")
 	r.HandleFunc("/orders/{id}", getOrder).Methods("GET")
