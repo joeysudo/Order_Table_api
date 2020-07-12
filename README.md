@@ -1,6 +1,6 @@
 # Test_api
 
-This is a REST api created in GoLang, the api is avaliable at https://gotestapi.herokuapp.com/orders
+This is a REST api created in GoLang, the api is served at https://gotestapi.herokuapp.com/orders
 
 # Parse the csv file
 Run data.py to parse the csv files in test_data folder
