@@ -14,10 +14,10 @@ order_items_df=pd.merge(order_items_df,orders_df,left_on='order_id',right_on='id
 order_merged_df=pd.merge(order_items_df,deliveries_df,left_on='id_x',right_on='order_item_id',how='left')
 
 delivered_amount = order_merged_df["delivered_quantity"] * order_merged_df["price_per_unit"]
-order_merged_df["delivered_amount"] = delivered_amount
+order_merged_df["delivered_amount"] = round(delivered_amount,2)
 
 total_amount = order_merged_df["quantity"] * order_merged_df["price_per_unit"]
-order_merged_df["total_amount"] = total_amount
+order_merged_df["total_amount"] = round(total_amount, 2)
 
 print(order_merged_df)
 df = pd.DataFrame(order_merged_df, columns= ['order_id','created_at','order_name','id_x','price_per_unit','quantity','delivered_quantity','product','user_id','login','password','name','company_id','company_name','credit_cards','delivered_amount','total_amount'])
