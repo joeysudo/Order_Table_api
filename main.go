@@ -95,6 +95,14 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(orders)
 }
 
+func getPort() string {
+	p := os.Getenv("PORT")
+	if p != "" {
+		return ":" + p
+	}
+	return ":8000"
+}
+
 // Main function
 func main() {
 
@@ -138,6 +146,7 @@ func main() {
 	r.HandleFunc("/orders/{id}", deleteOrder).Methods("DELETE")
 
 	// Start server
-	log.Fatal(http.ListenAndServe(":8000", r))
+	port := getPort()
+	log.Fatal(http.ListenAndServe(port, r))
 
 }
