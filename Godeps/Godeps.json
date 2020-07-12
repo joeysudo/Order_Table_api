@@ -2,10 +2,12 @@
 	"ImportPath": "github.com/joeysudo/Test_api",
 	"GoVersion": "go1.14",
 	"GodepVersion": "v80",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
+		{
+			"ImportPath": "github.com/gorilla/handlers",
+			"Comment": "v1.4.2-3-gf08afc1",
+			"Rev": "f08afc1876ad882db8074bcb8a4cc96107d3a5f4"
+		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.7.4-1-g948bec3",
