@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -32,18 +33,24 @@ type Customer struct {
 	CompanyName string `json:"company_name"`
 }
 
+func homeLink(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Welcome testorder!")
+}
+
+type server struct{}
+
 // Init orders var as a slice Order struct
 var orders []Order
 
 // Get all orders
 func getOrders(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	json.NewEncoder(w).Encode(orders)
 }
 
 // Get single order by orderID
 func getOrder(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	params := mux.Vars(r) // Gets params
 	// Loop through orders and find one with the id from the params
 	for _, item := range orders {
@@ -57,7 +64,7 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 
 // Add new order
 func createOrder(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var order Order
 	_ = json.NewDecoder(r.Body).Decode(&order)
 	orders = append(orders, order)
@@ -66,7 +73,7 @@ func createOrder(w http.ResponseWriter, r *http.Request) {
 
 // Update order
 func updateOrder(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	params := mux.Vars(r)
 	for index, item := range orders {
 		if item.OrderID == params["id"] {
@@ -84,7 +91,7 @@ func updateOrder(w http.ResponseWriter, r *http.Request) {
 
 // Delete order
 func deleteOrder(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	params := mux.Vars(r)
 	for index, item := range orders {
 		if item.OrderID == params["id"] {
@@ -137,16 +144,16 @@ func main() {
 	fmt.Println(string(orderJSON))
 	fmt.Println("Listen to localhost:8000!")
 	// Init router
-	r := mux.NewRouter()
+	r := mux.NewRouter().StrictSlash(true)
 	// Route handles & endpoints
+	r.HandleFunc("/", homeLink).Methods("GET")
 	r.HandleFunc("/orders", getOrders).Methods("GET")
 	r.HandleFunc("/orders/{id}", getOrder).Methods("GET")
 	r.HandleFunc("/orders", createOrder).Methods("POST")
 	r.HandleFunc("/orders/{id}", updateOrder).Methods("PUT")
 	r.HandleFunc("/orders/{id}", deleteOrder).Methods("DELETE")
-
 	// Start server
 	port := getPort()
-	log.Fatal(http.ListenAndServe(port, r))
+	log.Fatal(http.ListenAndServe(port, handlers.CORS(handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}), handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"}), handlers.AllowedOrigins([]string{"*"}))(r)))
 
 }
