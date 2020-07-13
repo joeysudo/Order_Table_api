@@ -1,12 +1,25 @@
-# Test_api
+#  Test-Order-Table-api
 
-This is a REST api created in GoLang, the api is served at https://gotestapi.herokuapp.com/orders
+This repo houses the assets used to build the Rest api for Order-Table
+This project was powered by Golang
+
+To check the front end repository see https://github.com/joeysudo/Test_app
+
+You can access the API https://gotestapi.herokuapp.com/
 
 # Parse the csv file
-Run data.py to parse the csv files in test_data folder
+
+```
+Run 'data.py' to parse the csv files in test_data folder
+```
+
 
 # Run API
-Run api by 'run go *.go', the api would run on port 8000
+
+```
+run go *.go
+```
+the api would run on port 8000
 
 Get all orders[method:Get]:
 http://localhost:8000/orders
