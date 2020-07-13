@@ -21,17 +21,13 @@ type Order struct {
 	OrderID         string    `json:"order_id"`
 	OrderName       string    `json:"order_name"`
 	CreateTime      time.Time `json:"create_time"`
-	Product         string    `json:"product"`
 	DeliveredAmount float64   `json:"delivered_amount"`
 	TotalAmount     float64   `json:"total_amount"`
-	Customer        *Customer `json:"customer"`
-}
-
-// Customer struct
-type Customer struct {
 	Name        string `json:"customer_name"`
 	CompanyName string `json:"company_name"`
 }
+
+
 
 func homeLink(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome testorder!")
@@ -126,18 +122,14 @@ func main() {
 		t, _ := time.Parse(time.RFC3339, record[1])
 		da, _ := strconv.ParseFloat(record[15], 64)
 		ta, _ := strconv.ParseFloat(record[16], 64)
-
 		orders = append(orders, Order{
 			OrderID:         record[0],
-			OrderName:       record[2],
+			OrderName:       record[2]+record[7],
 			CreateTime:      t,
-			Product:         record[7],
 			DeliveredAmount: da,
 			TotalAmount:     ta,
-			Customer: &Customer{
-				Name:        record[11],
-				CompanyName: record[13],
-			},
+			Name:        record[11],
+			CompanyName: record[13],
 		})
 	}
 	orderJSON, _ := json.Marshal(orders)

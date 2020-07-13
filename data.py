@@ -1,5 +1,8 @@
 import pandas as pd
 import csv,json
+import datetime
+from datetime import datetime
+
 
 costomer_company_df=pd.read_csv('test_data/Test task - Mongo - customer_companies.csv')
 costomer_company_df['company_id'].isna()==False
@@ -18,6 +21,8 @@ order_merged_df["delivered_amount"] = round(delivered_amount,2)
 
 total_amount = order_merged_df["quantity"] * order_merged_df["price_per_unit"]
 order_merged_df["total_amount"] = round(total_amount, 2)
+
+
 
 print(order_merged_df)
 df = pd.DataFrame(order_merged_df, columns= ['order_id','created_at','order_name','id_x','price_per_unit','quantity','delivered_quantity','product','user_id','login','password','name','company_id','company_name','credit_cards','delivered_amount','total_amount'])
