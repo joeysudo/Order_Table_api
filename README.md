@@ -17,7 +17,7 @@ Run 'data.py' to parse the csv files in test_data folder
 # Run API
 
 ```
-run go *.go
+go run *.go
 ```
 the api would run on port 8000
 
