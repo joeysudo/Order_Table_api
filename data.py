@@ -22,11 +22,8 @@ order_merged_df["delivered_amount"] = round(delivered_amount,2)
 total_amount = order_merged_df["quantity"] * order_merged_df["price_per_unit"]
 order_merged_df["total_amount"] = round(total_amount, 2)
 
-new_format = "%b %d %H:%M%p"
 
-dates_list = [datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ').strftime(new_format) for date in order_merged_df["created_at"]]
 
-order_merged_df["created_at"]=dates_list
 
 print(order_merged_df)
 df = pd.DataFrame(order_merged_df, columns= ['order_id','created_at','order_name','id_x','price_per_unit','quantity','delivered_quantity','product','user_id','login','password','name','company_id','company_name','credit_cards','delivered_amount','total_amount'])

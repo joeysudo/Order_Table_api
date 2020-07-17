@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-
+	"time"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -19,7 +19,7 @@ import (
 type Order struct {
 	OrderID         string    `json:"order_id"`
 	OrderName       string    `json:"order_name"`
-	CreateTime      string `json:"create_time"`
+	CreateTime      time.Time `json:"create_time"`
 	DeliveredAmount float64   `json:"delivered_amount"`
 	TotalAmount     float64   `json:"total_amount"`
 	Name        string `json:"customer_name"`
@@ -120,10 +120,11 @@ func main() {
 		}
 		da, _ := strconv.ParseFloat(record[15], 64)
 		ta, _ := strconv.ParseFloat(record[16], 64)
+		t, _ := time.Parse(time.RFC3339 , record[1])
 		orders = append(orders, Order{
 			OrderID:         record[0],
 			OrderName:       record[2]+record[7],
-			CreateTime:      record[1],
+			CreateTime:      t,
 			DeliveredAmount: da,
 			TotalAmount:     ta,
 			Name:        record[11],
